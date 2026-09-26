@@ -1,0 +1,48 @@
+{
+  "name": "DILSHAN-MD",
+  "description": "DILSHAN-MD is a powerful, fully customizable WhatsApp bot 🤖",
+  "logo": "https://raw.githubusercontent.com/ThanujaDilshan-LK/QUEENHANSI-l-Md-web/c8f9914d90feeba7118e056d45df8ae528719785/assets/file_00000000c9fc8211b757193ae356dd0b.png",
+  "keywords": ["nodejs", "bot", "whatsapp-bot", "multi-device", "dilshan-md"],
+  "website": "https://github.com/ThanujaDilshan-LK/DILSHAN-MD",
+  "repository": "https://github.com/ThanujaDilshan-LK/DILSHAN-MD",
+  "success_url": "/",
+
+  "env": {
+    "SESSION_ID": {
+      "description": "Your DILSHAN-MD Session ID from the Pair site (starts with DILSHAN-MD~...). Get one at your deployed Pair/QR site.",
+      "required": true
+    },
+    "DB_TYPE": {
+      "description": "Storage backend: json (default, no setup needed), mongodb, postgres, mysql, or github.",
+      "value": "json",
+      "required": false
+    },
+    "DB_URL": {
+      "description": "Connection string for DB_TYPE=mongodb/postgres/mysql. Leave blank if using json (default) or github.",
+      "required": false
+    },
+    "GITHUB_TOKEN": {
+      "description": "Only needed if DB_TYPE=github — a GitHub personal access token with repo write access.",
+      "required": false
+    },
+    "GITHUB_REPO": {
+      "description": "Only needed if DB_TYPE=github — the repo to store data in, as username/repo.",
+      "required": false
+    }
+  },
+
+  "buildpacks": [
+    {
+      "url": "https://github.com/heroku/heroku-buildpack-nodejs.git"
+    }
+  ],
+
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+
+  "stack": "heroku-24"
+}

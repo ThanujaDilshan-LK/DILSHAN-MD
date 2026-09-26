@@ -1,0 +1,25 @@
+# DILSHAN-MD — docker-compose template for ONE customer instance.
+#
+# This file is a template — copy it into each customer's own folder
+# (see deploy-customer-docker.sh) and adjust container_name / volumes
+# per customer. Don't run multiple customers off one shared compose
+# file; each customer gets their own copy so their session/data stay
+# isolated and their container can be stopped/removed independently.
+
+services:
+  dilshan-bot:
+    build: .
+    container_name: dilshan-CUSTOMER_NAME       # e.g. dilshan-customer1
+    restart: unless-stopped
+    env_file:
+      - .env                                     # holds SESSION_ID for this customer
+    volumes:
+      - ./session:/app/session                   # persists WhatsApp session across restarts
+      - ./data:/app/data                          # persists owner.json, license.json, custom commands, etc.
+    mem_limit: 350m                                # caps this container so one bot can't starve the others
+    cpus: 0.5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
