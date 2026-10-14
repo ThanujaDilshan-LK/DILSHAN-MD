@@ -11,7 +11,7 @@ A fast, lightweight WhatsApp bot built on the **Baileys** multi-device API. DILS
 </div>
 
 <div align="center">
-  <img src="https://raw.githubusercontent.com/ThanujaDilshan-LK/QUEENHANSI-l-Md-web/c8f9914d90feeba7118e056d45df8ae528719785/assets/file_00000000c9fc8211b757193ae356dd0b.png" alt="DILSHAN-MD" height="280">
+  <img src="https://raw.githubusercontent.com/ThanujaDilshan-LK/QUEENHANSI-l-Md-web/084d8dca0844a14fb976dc4b1aa933858363b7a5/assets/file_00000000207c82089497ca7245b3e94c.png" alt="DILSHAN-MD" height="280">
 </div>
 
 <div align="center">
