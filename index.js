@@ -1,20 +1,12 @@
-/**
- * Knight Bot - A WhatsApp Bot
- * Copyright (c) 2024 Professor
- * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the MIT License.
- * 
- * Credits:
- * - Baileys Library by @adiwajshing
- * - Pair Code implementation inspired by TechGod143 & DGXEON
- */
+
 require('./settings')
 const { Boom } = require('@hapi/boom')
 const fs = require('fs')
+const { restoreSessionFromShortToken, TOKEN_RE } = require('./lib/sessionBridge')
 const chalk = require('chalk')
 const FileType = require('file-type')
 const path = require('path')
+const zlib = require('node:zlib')
 const axios = require('axios')
 const { handleMessages, handleGroupParticipantUpdate, handleStatus } = require('./main');
 const { startLicenseWatcher } = require('./license');
@@ -99,15 +91,51 @@ async function startXeonBotInc() {
         // (Heroku, some Docker setups) reconnect without re-pairing on
         // every restart. If ./session/creds.json already exists from a
         // mounted volume, that takes priority and this is skipped.
-        if (process.env.SESSION_ID && process.env.SESSION_ID.startsWith('DILSHAN-MD~') && !fs.existsSync('./session/creds.json')) {
+        const incomingSessionId = String(process.env.SESSION_ID || '').trim();
+        if (TOKEN_RE.test(incomingSessionId)) {
             try {
-                const raw = process.env.SESSION_ID.replace('DILSHAN-MD~', '');
-                const creds = JSON.parse(Buffer.from(raw, 'base64').toString('utf-8'));
+                await restoreSessionFromShortToken(incomingSessionId);
+            } catch (e) {
+                console.error('[session] Could not restore 10-character SESSION_ID:', e.message);
+                console.error('[session] Check lib/sessionBridge.js API URL and persistent disk settings.');
+                process.exit(1);
+                return;
+            }
+        } else if (incomingSessionId.startsWith('DILSHAN-MD~') && !fs.existsSync('./session/creds.json')) {
+            try {
+                const sessionId = incomingSessionId;
+                const prefix = 'DILSHAN-MD~';
+                const payload = sessionId.slice(prefix.length);
+                let jsonText;
+                let sessionFormat = 'legacy base64 JSON';
+
+                // Compact format from the Pair API: DILSHAN-MD~Z~<gzip-base64url>
+                if (payload.startsWith('Z~')) {
+                    const encoded = payload.slice(2);
+                    if (!encoded) throw new Error('Compressed session payload is empty.');
+                    const compressed = Buffer.from(encoded, 'base64url');
+                    if (compressed.length < 10 || compressed[0] !== 0x1f || compressed[1] !== 0x8b) {
+                        throw new Error('Compressed session is not a valid GZIP payload.');
+                    }
+                    jsonText = zlib.gunzipSync(compressed, { maxOutputLength: 5 * 1024 * 1024 }).toString('utf8');
+                    sessionFormat = 'compressed GZIP/base64url';
+                } else {
+                    // Backwards compatibility for the older DILSHAN-MD~<base64-json> format.
+                    jsonText = Buffer.from(payload, 'base64').toString('utf8');
+                }
+
+                const creds = JSON.parse(jsonText);
+                if (!creds || typeof creds !== 'object' || Array.isArray(creds) || creds.registered !== true) {
+                    throw new Error('Decoded SESSION_ID is not a registered WhatsApp credentials object.');
+                }
                 fs.mkdirSync('./session', { recursive: true });
                 fs.writeFileSync('./session/creds.json', JSON.stringify(creds, null, 2));
-                console.log('[session] Restored from SESSION_ID env var.');
+                console.log(`[session] Restored from SESSION_ID env var (${sessionFormat}).`);
             } catch (e) {
                 console.error('[session] Could not restore from SESSION_ID:', e.message);
+                console.error('[session] Refusing to start a fresh pairing session with an invalid SESSION_ID.');
+                process.exit(1);
+                return;
             }
         }
 
